@@ -87,7 +87,201 @@ def find_streams(stream_type):
 
 
 def plot_stream(stream_type, n):
-    streams = find_streams(stream_type)
+    IDENTIFIER = 'PLOT STREAM'
+    streams = resolve_streams(LSL_SCAN_TIMEOUT)
+    streams = [stream for stream in streams if stream.type() == stream_type]
+    active_streams = []
+    for stream in streams:
+        inlet = StreamInlet(stream)
+        sample = inlet.pull_sample(timeout=0.1)
+        print(stream.name(), sample)
+        if sample is not None:
+            active_streams.append(stream)
+    print(active_streams)
+    streams = active_streams
+    print(IDENTIFIER, streams)
+    print(IDENTIFIER, n)
+
+    # TODO: This looks like it might have helped in properly resolving the elements here, but nonetheless I am running
+    #   into an issue, as unfortunately vispy throws me an error. But I believe the work can already be continued
+    #   on Windows (and Linux can be fixed subsequently). Here's the stacktrace I get:
+    #       MuseS - 4626
+    #       _EEG([-971.19140625, -935.05859375, -970.703125, -928.7109375, 0.0], 1688139245.919858)
+    #       [ < pylsl.pylsl.StreamInfo
+    #       object
+    #       at
+    #       0x7f3df995f250 >]
+    #       Starting
+    #       stream
+    #       Nr.
+    #       0
+    #       for < pylsl.pylsl.StreamInfo object at 0x7f3df995f250 >
+    #       MuseS - 4626
+    #       _EEG([-1000.0, -1000.0, -1000.0, 332.03125, 0.0], 1688139251.4507198)
+    #       [ < pylsl.pylsl.StreamInfo
+    #       object
+    #       at
+    #       0x7f3dcce64810 >]
+    #       PLOT
+    #       STREAM[ < pylsl.pylsl.StreamInfo
+    #       object
+    #       at
+    #       0x7f3dcce64810 >]
+    #       PLOT
+    #       STREAM
+    #       0
+    #       Setting
+    #       up
+    #       band -
+    #       pass
+    #       filter
+    #       from
+    #       3 - 40
+    #       Hz
+    #       FIR
+    #       filter
+    #       parameters
+    #       ---------------------
+    #       Designing
+    #       a
+    #       one -
+    #       pass, zero - phase, non - causal
+    #       bandpass
+    #       filter:
+    #       - Windowed
+    #       time - domain
+    #       design(firwin)
+    #       method
+    #       - Hamming
+    #       window
+    #       with 0.0194 passband ripple and 53 dB stopband attenuation
+    #       - Lower
+    #       passband
+    #       edge: 3.00
+    #       - Lower
+    #       transition
+    #       bandwidth: 2.00
+    #       Hz(-6
+    #       dB
+    #       cutoff
+    #       frequency: 2.00
+    #       Hz)
+    #       - Upper
+    #       passband
+    #       edge: 40.00
+    #       Hz
+    #       - Upper
+    #       transition
+    #       bandwidth: 10.00
+    #       Hz(-6
+    #       dB
+    #       cutoff
+    #       frequency: 45.00
+    #       Hz)
+    #       - Filter
+    #       length: 423
+    #       samples(1.652
+    #       s)
+    #       WARNING: Traceback(most
+    #       recent
+    #       call
+    #       last):
+    #       File
+    #       "/home/christoph/Desktop/Workflow/Work_2023/Thesis_Sid/Code/PyStreamSense/viewer/view_streams.py", line
+    #       63, in < module >
+    #       viewer.start_viewing(1)
+    #   File
+    #   "/home/christoph/Desktop/Workflow/Work_2023/Thesis_Sid/Code/PyStreamSense/viewer/view_streams.py", line
+    #   58, in start_viewing
+    #   p.start()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/process.py", line
+    #   121, in start
+    #   self._popen = self._Popen(self)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/context.py", line
+    #   224, in _Popen
+    #   return _default_context.get_context().Process._Popen(process_obj)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/context.py", line
+    #   281, in _Popen
+    #   return Popen(process_obj)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/popen_fork.py", line
+    #   19, in __init__
+    #   self._launch(process_obj)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/popen_fork.py", line
+    #   71, in _launch
+    #   code = process_obj._bootstrap(parent_sentinel=child_r)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/process.py", line
+    #   314, in _bootstrap
+    #   self.run()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/multiprocessing/process.py", line
+    #   108, in run
+    #   self._target(*self._args, **self._kwargs)
+    #   File
+    #   "/home/christoph/Desktop/Workflow/Work_2023/Thesis_Sid/Code/PyStreamSense/viewer/plot_streams.py", line
+    #   110, in plot_stream
+    #   app.run()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/app/_default_app.py", line
+    #   60, in run
+    #   return default_app.run()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/app/application.py", line
+    #   160, in run
+    #   return self._backend._vispy_run()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/app/backends/_egl.py", line
+    #   110, in _vispy_run
+    #   self._vispy_process_events()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/app/backends/_egl.py", line
+    #   105, in _vispy_process_events
+    #   win._on_draw()
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/app/backends/_egl.py", line
+    #   242, in _on_draw
+    #   self._vispy_canvas.events.draw(region=None)  # (0, 0, w, h))
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/util/event.py", line
+    #   453, in __call__
+    #   self._invoke_callback(cb, event)
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/util/event.py", line
+    #   471, in _invoke_callback
+    #   _handle_exception(self.ignore_callback_errors,
+    #   << caught
+    #   exception
+    #   here: >>
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/util/event.py", line
+    #   469, in _invoke_callback
+    #   cb(event)
+    #   File
+    #   "/home/christoph/Desktop/Workflow/Work_2023/Thesis_Sid/Code/PyStreamSense/viewer/plot_streams.py", line
+    #   284, in on_draw
+    #   [t.draw()
+    #   for t in self.names + self.quality]
+    #   File "/home/christoph/Desktop/Workflow/Work_2023/Thesis_Sid/Code/PyStreamSense/viewer/plot_streams.py", line 284, in < listcomp >
+    #   [t.draw() for t in self.names + self.quality]
+    #   ^ ^ ^ ^ ^ ^ ^ ^
+    #   File "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/visuals/visual.py", line 442, in draw
+    #   if self._prepare_draw(view=self) is False:
+    #       ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^ ^
+    #   File
+    #   "/home/christoph/anaconda3/envs/learning_studies/lib/python3.11/site-packages/vispy/visuals/text/text.py", line
+    #   594, in _prepare_draw
+    #   n_pix = (self._font_size / 72.) * transforms.dpi  # logical pix
+    #   ~~~~~~~~~~~~~~~~~~~~~~ ^ ~~~~~~~~~~~~~~~~~
+    #   TypeError: unsupported
+    #   operand
+    #   type(s)
+    #   for *: 'float' and 'NoneType'
+
     if n < len(streams):
         stream = streams[n]
         inlet = StreamInlet(stream)

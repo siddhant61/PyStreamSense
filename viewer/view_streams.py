@@ -1,7 +1,8 @@
 import logging
 from pylsl import resolve_streams, StreamInlet
 from multiprocessing import Process
-from viewer.plot_streams import plot_stream
+# from viewer.plot_streams import plot_stream as I was running it locally. Might need a switch or sth. like this too
+from plot_streams import plot_stream
 from muselsl.constants import LSL_SCAN_TIMEOUT
 
 class ViewStreams:
@@ -20,7 +21,7 @@ class ViewStreams:
         active_streams = []
         for stream in streams:
             inlet = StreamInlet(stream)
-            sample = inlet.pull_chunk(timeout=0.0)
+            sample = inlet.pull_sample(timeout=0.1)
             print(stream.name(),sample)
             if sample is not None:
                 active_streams.append(stream)
@@ -51,6 +52,7 @@ class ViewStreams:
         processes = []
 
         for i, stream in enumerate(streams):
+            print('Starting stream Nr. %d for %s' % (i, stream))
             p = Process(target=plot_stream, args=(stream_type,i))
             processes.append(p)
             p.start()

@@ -7,7 +7,7 @@ import threading
 import time
 import userpaths
 import serial
-import wmi
+# import wmi TODO: does not work under linux, so we need a switch here for checking OS and importing based on this
 import logging
 from recorder.save_data import SaveData
 from helper.find_devices import FindDevices

@@ -1,6 +1,6 @@
 import bluetooth
 import muselsl
-from pyempatica import EmpaticaClient, EmpaticaServerConnectError
+# from pyempatica import EmpaticaClient, EmpaticaServerConnectError
 import pywifi
 import time
 import serial.tools.list_ports
@@ -65,9 +65,18 @@ class FindDevices:
     # Function to find available Bluegiga BLED112 ports
     def serial_ports():
         bled_ports = []
-        ports = serial.tools.list_ports.comports()
+        # TODO: here we need a switch if we are operating on windows or linux.
+        #   For windows: ports = serial.tools.list_ports.comports()
+        #   For linux: serial.tools.list_ports_linux.comports()
+        ports = serial.tools.list_ports_linux.comports()
+        print('WORKING HERE IN THE MODIFIED SERIAL PORTS METHOD')
         for port, desc, hwid in sorted(ports):
-            if "Bluegiga Bluetooth Low Energy" in desc:
+            print('GOT A PORT THAT WAS DETECTED')
+            print('Description', desc)
+            # TODO: Here we might again need to utilize the switch. 
+            #   For  windows: 'Bluegiga Bluetooth Low Energy' in desc
+            #   For linux: 'Low Energy Dongle - CDC control' in desc
+            if "Low Energy Dongle - CDC control" in desc:
                 bled_ports.append(port)
         return bled_ports
 
