@@ -18,7 +18,7 @@ from muselsl.constants import (
 acc_enabled = True
 eeg_disabled = False
 ppg_enabled = False
-gyro_enabled = False
+gyro_enabled = True
 
 
 class StreamMuse:

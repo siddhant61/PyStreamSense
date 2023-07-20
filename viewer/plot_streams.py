@@ -9,6 +9,8 @@ Multiple real-time digital signals with GLSL-based clipping.
 
 import math
 import logging
+from collections import Counter
+
 import numpy as np
 from pylsl import resolve_byprop, StreamInlet, resolve_streams
 from seaborn import color_palette
@@ -74,29 +76,58 @@ void main() {
 }
 """
 
+
 def find_streams(stream_type):
-    streams = resolve_streams(LSL_SCAN_TIMEOUT)
-    streams = [stream for stream in streams if stream.type() == stream_type]
-    active_streams = []
-    for stream in streams:
-        inlet = StreamInlet(stream)
-        sample = inlet.pull_sample(timeout=0.0)
-        if sample[0] is not None:
-            active_streams.append(stream)
-    return active_streams
+    all_streams = resolve_streams(LSL_SCAN_TIMEOUT)
+    all_streams = [stream for stream in all_streams if stream.type() == stream_type]
+    stream_ids = {}
+    result = {}
+    streams = {}
+
+    for stream in all_streams:
+        key = stream.created_at()
+        value = stream.name()
+        stream_ids[key] = value
+
+    # Create a Counter from the dictionary values
+    counts = Counter(stream_ids.values())
+
+    # Create a new dictionary with only the keys whose value has a count greater than 1
+    duplicates = {k: v for k, v in stream_ids.items() if counts[v] > 1}
+
+    # Keep values which were created later to access the latest stream
+    for key, value in duplicates.items():
+        if value not in result or key > result[value]:
+            result[value] = key
+
+    result = {v: k for k, v in result.items()}
+
+    # Remove older duplicate streams from the dictionary
+    for stream in all_streams:
+        if not stream.name() in duplicates.values():
+            key = stream.created_at()
+            value = stream.name()
+            result[key] = value
+
+    # Save latest stream names and objects in the streams dictionary
+    for stream in all_streams:
+        if stream.created_at() in result.keys():
+            streams[stream.name()] = stream
+
+    return streams.values()
 
 
 def plot_stream(stream_type, n):
     streams = find_streams(stream_type)
     if n < len(streams):
-        stream = streams[n]
+        stream = list(streams)[n]
         inlet = StreamInlet(stream)
         name = stream.name()
         logging.info(f"Start acquiring data for stream '{name}'.")
-        Canvas(inlet, name)
-        app.run()
+        return Canvas(inlet, name)  # return the Canvas
     else:
         logging.warning("Invalid stream index.")
+        return None
 
 class Canvas(app.Canvas):
 
@@ -269,5 +300,9 @@ class Canvas(app.Canvas):
         gloo.set_viewport(0, 0, *self.physical_size)
         self.program.draw('line_strip')
         [t.draw() for t in self.names + self.quality]
+
+    def stop(self):
+        self._timer.stop()  # stop the timer
+
 
 
