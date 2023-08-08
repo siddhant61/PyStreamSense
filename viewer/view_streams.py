@@ -8,6 +8,8 @@ from viewer.plot_streams import plot_stream
 from muselsl.constants import LSL_SCAN_TIMEOUT
 from vispy import gloo, app, visuals
 
+view_logger = logging.getLogger(__name__)
+
 class ViewStreams:
     def __init__(self):
         self.eeg_streams = []
@@ -15,8 +17,8 @@ class ViewStreams:
         self.bvp_streams = []
         self.gsr_streams = []
         self.eeg_stream_count = 0
-        logging.basicConfig(format='%(asctime)s %(message)s')
-        logging.info("Initiating Viewer Instance.")
+
+        view_logger.info("Initiating Viewer Instance.")
 
     # def find_streams(self, stream_type):
     #     streams = resolve_streams(LSL_SCAN_TIMEOUT)
@@ -70,9 +72,7 @@ class ViewStreams:
 
         return streams.values()
 
-    def start_viewing(self, choice, duration=30):
-
-        logging.basicConfig(format='%(asctime)s %(message)s')
+    def start_viewing(self, choice, duration=60):
 
         if choice == 1:
             stream_type = 'EEG'
@@ -89,6 +89,7 @@ class ViewStreams:
         streams = self.find_streams(stream_type)
         if not streams:
             print(f"No {stream_type} streams found.")
+            view_logger.info((f"No {stream_type} streams found."))
             return
 
         canvases = []  # list to hold all the Canvas objects

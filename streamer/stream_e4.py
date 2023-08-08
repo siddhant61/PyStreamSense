@@ -10,6 +10,8 @@ bvp = True      # Blood Volume Pulse
 gsr = True      # Galvanic Skin Response (Electrodermal Activity)
 tmp = True      # Temperature
 
+e4_logger = logging.getLogger(__name__)
+
 class StreamE4():
 
     def __init__(self, e4):
@@ -27,59 +29,59 @@ class StreamE4():
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.settimeout(3)
 
-        logging.info("Connecting to server")
+        e4_logger.info("Connecting to server")
         s.connect((self.serverAddress, self.serverPort))
-        logging.info("Connected to server\n")
+        e4_logger.info("Connected to server\n")
 
-        logging.info("Devices available:")
+        e4_logger.info("Devices available:")
         s.send("device_list\r\n".encode())
         response = s.recv(self.bufferSize)
-        logging.info(response.decode("utf-8"))
+        e4_logger.info(response.decode("utf-8"))
 
-        logging.info("Connecting to device")
+        e4_logger.info("Connecting to device")
         s.send(("device_connect " + self.current_e4 + "\r\n").encode())
         response = s.recv(self.bufferSize)
         print(response.decode("utf-8"))
-        logging.info(response.decode("utf-8"))
+        e4_logger.info(response.decode("utf-8"))
 
-        logging.info("Pausing data receiving")
+        e4_logger.info("Pausing data receiving")
         s.send("pause ON\r\n".encode())
         response = s.recv(self.bufferSize)
-        logging.info(response.decode("utf-8"))
+        e4_logger.info(response.decode("utf-8"))
 
         self.connected = True
 
 
     def suscribe_to_data(self):
         if acc:
-            logging.info("Suscribing to ACC")
+            e4_logger.info("Suscribing to ACC")
             s.send(("device_subscribe " + 'acc' + " ON\r\n").encode())
             response = s.recv(self.bufferSize)
-            logging.info(response.decode("utf-8"))
+            e4_logger.info(response.decode("utf-8"))
         if bvp:
-            logging.info("Suscribing to BVP")
+            e4_logger.info("Suscribing to BVP")
             s.send(("device_subscribe " + 'bvp' + " ON\r\n").encode())
             response = s.recv(self.bufferSize)
-            logging.info(response.decode("utf-8"))
+            e4_logger.info(response.decode("utf-8"))
         if gsr:
-            logging.info("Suscribing to GSR")
+            e4_logger.info("Suscribing to GSR")
             s.send(("device_subscribe " + 'gsr' + " ON\r\n").encode())
             response = s.recv(self.bufferSize)
-            logging.info(response.decode("utf-8"))
+            e4_logger.info(response.decode("utf-8"))
         if tmp:
-            logging.info("Suscribing to Temp")
+            e4_logger.info("Suscribing to Temp")
             s.send(("device_subscribe " + 'tmp' + " ON\r\n").encode())
             response = s.recv(self.bufferSize)
-            logging.info(response.decode("utf-8"))
+            e4_logger.info(response.decode("utf-8"))
 
-        logging.info("Resuming data receiving")
+        e4_logger.info("Resuming data receiving")
         s.send("pause OFF\r\n".encode())
         response = s.recv(self.bufferSize)
-        logging.info(response.decode("utf-8"))
+        e4_logger.info(response.decode("utf-8"))
 
 
     def prepare_LSL_streaming(self):
-        logging.info("Starting LSL streaming")
+        e4_logger.info("Starting LSL streaming")
         if acc:
             infoACC = pylsl.StreamInfo(f'{self.current_e4}_ACC','ACC',3,32,'int32',f'ACC-empatica_e4_{self.current_e4}');
             global outletACC
@@ -99,7 +101,7 @@ class StreamE4():
 
 
     def reconnect(self):
-        logging.info("Reconnecting...")
+        e4_logger.info("Reconnecting...")
         while not self.connected:
             try:
                 self.connect()
@@ -115,12 +117,12 @@ class StreamE4():
     def stream(self):
         try:
             self.streaming = True
-            logging.info("Streaming ACC BVP GSR TEMP...")
+            e4_logger.info("Streaming ACC BVP GSR TEMP...")
             while True:
                 try:
                     response = s.recv(self.bufferSize).decode("utf-8")
                     if "connection lost to device" in response:
-                        logging.info(response)
+                        e4_logger.info(response)
                         self.connected = False
                         self.reconnect()
                         break
@@ -145,12 +147,12 @@ class StreamE4():
                             outletTemp.push_sample([data], timestamp=timestamp)
                     #time.sleep(1)
                 except socket.timeout:
-                    logging.info("Socket timeout")
+                    e4_logger.info("Socket timeout")
                     self.connected = False
                     self.reconnect()
                     break
         except KeyboardInterrupt:
-            logging.info("Disconnecting from device")
+            e4_logger.info("Disconnecting from device")
             s.send("device_disconnect\r\n".encode())
             self.connected = False
             s.close()
@@ -166,7 +168,6 @@ class StreamE4():
         self.stream()
 
     def start_streaming(self):
-        logging.basicConfig(format='%(asctime)s %(message)s')
         process = Process(target=self.e4_streamer)
         process.start()
 

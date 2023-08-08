@@ -19,7 +19,7 @@ acc_enabled = True
 eeg_disabled = False
 ppg_enabled = False
 gyro_enabled = True
-
+muse_logger = logging.getLogger(__name__)
 
 class StreamMuse:
 
@@ -29,12 +29,13 @@ class StreamMuse:
         self.name = name
 
 
+
     def start_adapter(self):
         adapter = BGAPIBackend(serial_port=self.interface)
         adapter_thread = Thread(target=adapter.start)
         adapter_thread.start()
         adapter_thread.join()
-        logging.info(f"{self.interface} connected")
+        muse_logger.info(f"{self.interface} connected")
         self.stream(adapter)
 
 
@@ -44,7 +45,7 @@ class StreamMuse:
 
         # If no data types are enabled, we warn the user and return immediately.
         if eeg_disabled and not ppg_enabled and not acc_enabled and not gyro_enabled:
-            logging.info('Stream initiation failed: At least one data source must be enabled.')
+            muse_logger.info('Stream initiation failed: At least one data source must be enabled.')
             return
 
         # For any backend except bluemuse, we will start LSL streams hooked up to the muse callbacks.
@@ -122,14 +123,14 @@ class StreamMuse:
         didConnect = muse.connect()
 
         if didConnect:
-            logging.info('Connected.')
+            muse_logger.info('Connected.')
             muse.start()
             eeg_string = " EEG" if not eeg_disabled else ""
             ppg_string = " PPG" if ppg_enabled else ""
             acc_string = " ACC" if acc_enabled else ""
             gyro_string = " GYRO" if gyro_enabled else ""
 
-            logging.info("Streaming%s%s%s%s..." %
+            muse_logger.info("Streaming%s%s%s%s..." %
                   (eeg_string, ppg_string, acc_string, gyro_string))
 
             while time() - muse.last_timestamp < timeout:
@@ -139,16 +140,20 @@ class StreamMuse:
                     muse.stop()
                     muse.disconnect()
                     break
+                except Exception as e:
+                    logging.error(f"Exception during streaming: {e}")
+                    logging.info("Attempting to reconnect in 5 seconds...")
+                    backends.sleep(5)
+                    continue
 
-            logging.info('Disconnected.')
+            muse_logger.info('Disconnected.')
 
         self.reconnect(adapter)
 
     def reconnect(self, adapter):
-        logging.info('Reconnecting')
+        muse_logger.info('Reconnecting')
         self.stream(adapter)
 
     def start_streaming(self):
-        logging.basicConfig(format='%(asctime)s %(message)s')
         process = Process(target=self.start_adapter)
         process.start()

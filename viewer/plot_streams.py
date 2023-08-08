@@ -76,6 +76,7 @@ void main() {
 }
 """
 
+plot_logger = logging.getLogger(__name__)
 
 def find_streams(stream_type):
     all_streams = resolve_streams(LSL_SCAN_TIMEOUT)
@@ -118,15 +119,16 @@ def find_streams(stream_type):
 
 
 def plot_stream(stream_type, n):
+
     streams = find_streams(stream_type)
     if n < len(streams):
         stream = list(streams)[n]
         inlet = StreamInlet(stream)
         name = stream.name()
-        logging.info(f"Start acquiring data for stream '{name}'.")
+        plot_logger.info(f"Start acquiring data for stream '{name}'.")
         return Canvas(inlet, name)  # return the Canvas
     else:
-        logging.warning("Invalid stream index.")
+        plot_logger.warning("Invalid stream index.")
         return None
 
 class Canvas(app.Canvas):

@@ -21,8 +21,12 @@ def main():
     log_path = userpaths.get_my_documents().replace("\\", "/") + f"/Data_Logs"
     output_folder_path = Path(log_path)
     output_folder_path.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(filename=f"{log_path}/{str(datetime.today().timestamp()).replace('.', '_')}.log", level=logging.INFO, force=True)
-    logging.basicConfig(format='%(asctime)s %(message)s')
+    logging.basicConfig(filename=f"{log_path}/{str(datetime.today().timestamp()).replace('.', '_')}.log",
+                        level=logging.INFO,
+                        format='%(asctime)s %(message)s',
+                        force=True)
+
+    main_logger = logging.getLogger(__name__)
 
     while True:
         print("The following options are available:\n")
@@ -49,8 +53,10 @@ def main():
                     ser.close()
                 except serial.serialutil.SerialException:
                     print(f"{port} is not available.\n")
+                    main_logger.info(f"{port} is not available.\n")
 
             print(f"{len(com_ports)} free serial port(s) detected.\n")
+            main_logger.info(f"{len(com_ports)} free serial port(s) detected.\n")
 
             if len(com_ports) != 0:
                 muses = devices.find_muse()
@@ -64,8 +70,10 @@ def main():
                         value = muses[i]['address']
                         muse_reg[key] = value
                     print(f"{len(muse_reg)} Muse device(s) registered\n")
+                    main_logger.info(f"{len(muse_reg)} Muse device(s) registered\n")
                 else:
                     print("No Muse devices found.\n")
+                    main_logger.info("No Muse devices found.\n")
 
                 if len(muse_reg) != 0:
                     for i in range(len(muse_reg)):
@@ -83,8 +91,10 @@ def main():
                             time.sleep(10)
                         time.sleep(10)
                         print(f"{len(muse_threads)} Muse streaming thread(s) running\n")
+                        main_logger.info(f"{len(muse_threads)} Muse streaming thread(s) running\n")
                     else:
                         print("No Muse streaming threads running.\n")
+                        main_logger.info("No Muse streaming threads running.\n")
 
         elif choice == 2:
             while True:
@@ -115,6 +125,7 @@ def main():
 
             while not (e4_server):
                 print('Checking for E4 Server Process.\n')
+                main_logger.info('Checking for E4 Server Process.\n')
                 f = wmi.WMI()
 
                 flag = 0
@@ -123,6 +134,7 @@ def main():
                 for process in f.Win32_Process():
                     if "EmpaticaBLEServer.exe" == process.Name:
                         print("E4 Server is running. Finding Serial Ports.\n")
+                        main_logger.info("E4 Server is running. Finding Serial Ports.\n")
                         e4_server = True
                         flag = 1
                         break
@@ -130,6 +142,7 @@ def main():
                 if flag == 0:
                     e4_server = False
                     print("E4 Server is not running. Please start the server first.\n")
+                    main_logger.info("E4 Server is not running. Please start the server first.\n")
                     time.sleep(10)
 
             e4s = devices.find_empatica()
@@ -141,6 +154,7 @@ def main():
                     e4_reg[key] = value
             else:
                 print("No E4 devices found")
+                main_logger.info("No E4 devices found")
 
             if len(e4_reg) != 0:
                 for i in range(len(e4_reg)):
@@ -152,6 +166,7 @@ def main():
                     value = threading.Thread(target=list(e4_streamers.values())[i].start_streaming)
                     e4_threads[key] = value
                 print(f"{len(e4_reg)} E4 device(s) registered\n")
+                main_logger.info(f"{len(e4_reg)} E4 device(s) registered\n")
             else:
                 print("No E4 devices registered\n")
 
@@ -161,10 +176,13 @@ def main():
                     time.sleep(5)
                 time.sleep(10)
                 print(f"{len(e4_threads)} E4 streaming thread(s) running\n")
+                main_logger.info(f"{len(e4_threads)} E4 streaming thread(s) running\n")
             else:
                 print("No E4 streaming threads running.\n")
+                main_logger.info("No E4 streaming threads running.\n")
 
         elif choice == 4:
+            main_logger.info("Recording data.\n")
             data_recorder = SaveData()
             data_recorder.record_streams()
         else:

@@ -8,6 +8,7 @@ from collections import Counter
 from datetime import datetime, timedelta
 from pylsl import resolve_streams, StreamInlet
 
+recorder_logger = logging.getLogger(__name__)
 
 class SaveData:
     def __init__(self):
@@ -23,7 +24,7 @@ class SaveData:
         self.output_folder_path.mkdir(parents=True, exist_ok=True)
         self.stream_update_interval = 2.0
         self.stream_update_thread = threading.Thread(target=self.update_streams)
-        logging.basicConfig(format='%(asctime)s %(message)s')
+
 
 
     def save_to_csv(self, stream_id, data, timestamp):
@@ -91,7 +92,7 @@ class SaveData:
             self.stream_inlets[stream_id] = inlet
             self.connected[stream_id] = True
             print(f"Stream Connected: {stream_id}")
-            logging.info(f"Stream Connected: {stream_id}")
+            recorder_logger.info(f"Stream Connected: {stream_id}")
             output_file = f"{self.output_folder}/{stream_id}.csv"
             self.output_files[stream_id] = output_file
             miss_count[stream_id] = 0
@@ -111,47 +112,56 @@ class SaveData:
                     miss_count[stream_id] = 0
 
                 # If there are more than 2 missing samples then the stream is disconnected.
-                # SR = 256, each iteration should receive 256*0.13=33 samples.
+                # SR = 256, each iteration should receive 256*0.13 = 33 samples.
                 if "EEG" in stream_id:
                     if miss_count.get(stream_id) > 2:
                         if self.connected[stream_id]:
-                            logging.info(f"Stream disconnected: {stream_id}")
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
                         disconnected_streams.append(stream_id)
                         self.connected[stream_id] = False
 
                 # If there are more than 10 missing samples then the stream is disconnected.
-                # SR = 64, each iteration should receive 64*0.13=8 samples.
+                # SR = 64, each iteration should receive 64*0.13 = 8 samples.
                 elif "BVP" in stream_id:
                     if miss_count.get(stream_id) > 10:
                         if self.connected[stream_id]:
-                            logging.info(f"Stream disconnected: {stream_id}")
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
+                        disconnected_streams.append(stream_id)
+                        self.connected[stream_id] = False
+
+                # If there are more than 15 missing samples then the stream is disconnected
+                # SR = 50, each iteration should receive 50*0.13 = 6.5 samples
+                elif "GYRO" in stream_id:
+                    if miss_count.get(stream_id) > 15:
+                        if self.connected[stream_id]:
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
                         disconnected_streams.append(stream_id)
                         self.connected[stream_id] = False
 
                 # If there are more than 20 missing samples then the stream is disconnected
-                # SR = 32, each iteration should receive 32*0.13=4 samples.
+                # SR = 32, each iteration should receive 32*0.13 = 4 samples.
                 elif "ACC" in stream_id:
                     if miss_count.get(stream_id) > 20:
                         if self.connected[stream_id]:
-                            logging.info(f"Stream disconnected: {stream_id}")
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
                         disconnected_streams.append(stream_id)
                         self.connected[stream_id] = False
 
                 # If there are more than 30 missing samples then the stream is disconnected
-                # SR = 4, each iteration should receive 4*0.13= 0.5 samples or 1 sample every 2 iterations.
+                # SR = 4, each iteration should receive 4*0.13 = 0.5 samples or 1 sample every 2 iterations.
                 elif "GSR" in stream_id:
                     if miss_count.get(stream_id) > 40:
                         if self.connected[stream_id]:
-                            logging.info(f"Stream disconnected: {stream_id}")
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
                         disconnected_streams.append(stream_id)
                         self.connected[stream_id] = False
 
                 # If there are more than 30 missing samples then the stream is disconnected
-                # SR = 4, each iteration should receive 4*0.13= 0.5 samples or 1 sample every 2 iterations.
+                # SR = 4, each iteration should receive 4*0.13 = 0.5 samples or 1 sample every 2 iterations.
                 elif "TEMP" in stream_id:
                     if miss_count.get(stream_id) > 40:
                         if self.connected[stream_id]:
-                            logging.info(f"Stream disconnected: {stream_id}")
+                            recorder_logger.info(f"Stream disconnected: {stream_id}")
                         disconnected_streams.append(stream_id)
                         self.connected[stream_id] = False
 
@@ -176,7 +186,7 @@ class SaveData:
 
             for stream_id in disconnected_streams:
                 if stream_id in self.stream_inlets and stream_id in self.streams:
-                    logging.info(f"Stream reconnected: {stream_id}")
+                    recorder_logger.info(f"Stream reconnected: {stream_id}")
                     self.stream_inlets[stream_id] = StreamInlet(self.streams[stream_id])
                     self.connected[stream_id] = True
                     miss_count[stream_id] = 0
